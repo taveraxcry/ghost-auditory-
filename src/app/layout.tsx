@@ -1,0 +1,31 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/lib/AuthContext";
+import Navigation from "./Navigation";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Ghost Auditory | Solo Huellas",
+  description: "Sistema de Gestión de Conocimiento Operativo",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="es" className="dark">
+      <body className={`${inter.className} antialiased selection:bg-primary/30 selection:text-white`}>
+        <AuthProvider>
+          <Navigation />
+          <main className="pt-28 min-h-screen pb-12">
+            {children}
+          </main>
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}
