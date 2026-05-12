@@ -13,30 +13,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing query" }, { status: 400 });
     }
 
-    // Fetch dynamic knowledge base via Firestore REST API (server-safe)
+    // Fetch dynamic knowledge base via Firestore REST API (server-safe, with timeout)
     let customKnowledge = "";
     try {
       const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
       if (projectId) {
         const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/knowledge_base`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const json = await res.json();
-          const docs = json.documents || [];
-          if (docs.length > 0) {
-            customKnowledge = "\n\n--- BASE DE CONOCIMIENTO PERSONALIZADA (PRIORIDAD ALTA) ---\n";
-            for (const d of docs) {
-              const fields = d.fields || {};
-              const title = fields.title?.stringValue || "Sin título";
-              const content = fields.content?.stringValue || "";
-              customKnowledge += `\n## ${title}\n${content}\n`;
-            }
-            customKnowledge += "\n--- FIN BASE DE CONOCIMIENTO PERSONALIZADA ---\n";
+        const timeout = new Promise<null>((_, reject) => setTimeout(() => reject(new Error("timeout")), 1500));
+        const fetchRes = fetch(url).then(r => r.ok ? r.json() : null);
+        const json = await Promise.race([fetchRes, timeout]).catch(() => null) as any;
+        const docs = json?.documents || [];
+        if (docs.length > 0) {
+          customKnowledge = "\n\n--- BASE DE CONOCIMIENTO PERSONALIZADA (PRIORIDAD ALTA) ---\n";
+          for (const d of docs) {
+            const fields = d.fields || {};
+            const title = fields.title?.stringValue || "Sin título";
+            const content = fields.content?.stringValue || "";
+            customKnowledge += `\n## ${title}\n${content}\n`;
           }
+          customKnowledge += "\n--- FIN BASE DE CONOCIMIENTO PERSONALIZADA ---\n";
         }
       }
     } catch (kbErr) {
-      console.error("Could not fetch knowledge base:", kbErr);
+      // Silently skip if KB fetch fails or times out
     }
 
     // Agent prompt instructions
