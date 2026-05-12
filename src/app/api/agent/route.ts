@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
@@ -171,6 +174,7 @@ BASE DE CONOCIMIENTOS (FAQ):
       ],
       model: 'llama-3.1-8b-instant',
       temperature: 0.1,
+      max_tokens: 600,
     });
 
     const aiResponse = chatCompletion.choices[0]?.message?.content || "";

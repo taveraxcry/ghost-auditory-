@@ -112,10 +112,10 @@ export default function JuniorView() {
       
       if (data.isIrrelevant) {
         setIsIrrelevant(true);
-      } else if (data.isComplex || data.answer.includes("COMPLEJA") || !res.ok) {
+      } else if (data.isComplex || data.answer?.includes("COMPLEJA") || !res.ok) {
         setIsComplex(true);
       } else {
-        setAnswer(data.answer);
+        setAnswer(data.answer || "");
       }
       
       // Save to Firebase from frontend
@@ -351,7 +351,7 @@ export default function JuniorView() {
             </p>
             {!bengalaSent && !pendingAuditId ? (
               <button 
-                onClick={() => setBengalaSent(true)}
+                onClick={handleEscalate}
                 className="bg-accent hover:bg-yellow-600 text-white px-10 py-5 rounded-[20px] font-extrabold text-xl transition-all hover-lift flex items-center gap-3 mx-auto shadow-xl"
               >
                 <Flame size={24} />
