@@ -17,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
-      <body className={`${inter.className} antialiased selection:bg-primary/30 selection:text-white`}>
+    <html lang="es">
+      <body className={`${inter.className} bg-background text-foreground antialiased selection:bg-primary/30 selection:text-foreground`}>
         <AuthProvider>
           <Navigation />
           <main className="pt-28 min-h-screen pb-12">
