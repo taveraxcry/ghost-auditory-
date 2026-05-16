@@ -342,8 +342,11 @@ export default function AuditorView() {
                   {item.status === 'irrelevant' ? "🚫 Nada que ver (Fuera de dominio)" :
                    item.is_complex ? "⚠️ Escalado al Experto (Falta de conocimiento local)" : "✅ Automatización Exitosa"}
                 </p>
-                {!item.is_complex && item.status !== 'irrelevant' && (
-                  <p className="text-md text-gray-600 mt-3 line-clamp-2 leading-relaxed bg-gray-50 p-3 rounded-xl">{item.answer}</p>
+                {item.answer && item.status !== 'irrelevant' && (
+                  <p className="text-md text-gray-600 mt-3 line-clamp-3 leading-relaxed bg-gray-50 p-3 rounded-xl">
+                    {item.is_complex && <span className="text-xs font-bold text-primary mr-2">Respuesta del Senior:</span>}
+                    {item.answer}
+                  </p>
                 )}
               </div>
               
