@@ -265,7 +265,8 @@ export default function JuniorView() {
           className="mt-12 w-full bg-white rounded-3xl p-8 border border-gray-100 shadow-sm text-center"
         >
           <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-500 font-medium">Ghosty está pensando...</p>
+          <p className="text-gray-700 font-bold text-lg">Ghosty está procesando tu pregunta...</p>
+          <p className="text-gray-400 font-medium text-sm mt-2">Esto puede tardar hasta 30 segundos. Por favor espera ⏳</p>
         </motion.div>
       )}
 
