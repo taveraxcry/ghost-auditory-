@@ -68,7 +68,7 @@ export default function JuniorView() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim() || query.trim().length < 5) return;
     
     setIsLoading(true);
     setSearched(true);
@@ -173,6 +173,7 @@ export default function JuniorView() {
     setIsIrrelevant(false);
     setBengalaSent(false);
     setPendingAuditId(null);
+    sessionStorage.removeItem("ghosty_state");
   };
 
   const triggerSearch = (text: string) => {
