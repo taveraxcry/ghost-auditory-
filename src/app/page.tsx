@@ -30,6 +30,8 @@ export default function JuniorView() {
         setAnswer(parsed.answer || "");
         setIsComplex(parsed.isComplex || false);
         setIsIrrelevant(parsed.isIrrelevant || false);
+        setBengalaSent(parsed.bengalaSent || false);
+        setPendingAuditId(parsed.pendingAuditId || null);
       } catch (e) {
         console.error("Failed to restore state", e);
       }
@@ -39,9 +41,9 @@ export default function JuniorView() {
   // Save state to sessionStorage
   useEffect(() => {
     sessionStorage.setItem("ghosty_state", JSON.stringify({
-      query, searched, answer, isComplex, isIrrelevant
+      query, searched, answer, isComplex, isIrrelevant, bengalaSent, pendingAuditId
     }));
-  }, [query, searched, answer, isComplex, isIrrelevant]);
+  }, [query, searched, answer, isComplex, isIrrelevant, bengalaSent, pendingAuditId]);
 
   useEffect(() => {
     let unsubscribe: () => void;
