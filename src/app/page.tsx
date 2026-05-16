@@ -151,22 +151,23 @@ export default function JuniorView() {
   };
 
   const handleEscalate = async () => {
+    if (bengalaSent) return; // Prevenir duplicados
+    setBengalaSent(true); // Bloquear inmediatamente
     setIsComplex(true);
     setAnswer("");
     try {
-      // Create a NEW pending document that the Senior will actually see
       const docRef = await addDoc(collection(db, "audits"), {
         query: `${query}`,
         answer: "",
         status: "pending",
         is_complex: true,
         created_at: new Date().toISOString(),
-        askedBy: "junior", // Forzado para permitir pruebas de desarrollador
+        askedBy: "junior",
       });
       setPendingAuditId(docRef.id);
-      setBengalaSent(true);
     } catch (e) {
       console.error(e);
+      setBengalaSent(false); // Permitir reintentar si falló
     }
   };
 
