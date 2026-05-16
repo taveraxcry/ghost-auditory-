@@ -10,33 +10,26 @@ import { collection, addDoc, doc, getDoc } from "firebase/firestore";
 
 export default function JuniorView() {
   const { uid } = useAuth();
-  const [query, setQuery] = useState("");
-  const [searched, setSearched] = useState(false);
+
+  // Initialize state from sessionStorage directly (no race condition)
+  const [savedState] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem("ghosty_state");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+
+  const [query, setQuery] = useState(savedState?.query || "");
+  const [searched, setSearched] = useState(savedState?.searched || false);
   const [isLoading, setIsLoading] = useState(false);
-  const [answer, setAnswer] = useState("");
-  const [isComplex, setIsComplex] = useState(false);
-  const [isIrrelevant, setIsIrrelevant] = useState(false);
-  const [bengalaSent, setBengalaSent] = useState(false);
-  const [pendingAuditId, setPendingAuditId] = useState<string | null>(null);
+  const [answer, setAnswer] = useState(savedState?.answer || "");
+  const [isComplex, setIsComplex] = useState(savedState?.isComplex || false);
+  const [isIrrelevant, setIsIrrelevant] = useState(savedState?.isIrrelevant || false);
+  const [bengalaSent, setBengalaSent] = useState(savedState?.bengalaSent || false);
+  const [pendingAuditId, setPendingAuditId] = useState<string | null>(savedState?.pendingAuditId || null);
 
-  // Restore state from sessionStorage
-  useEffect(() => {
-    const saved = sessionStorage.getItem("ghosty_state");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setQuery(parsed.query || "");
-        setSearched(parsed.searched || false);
-        setAnswer(parsed.answer || "");
-        setIsComplex(parsed.isComplex || false);
-        setIsIrrelevant(parsed.isIrrelevant || false);
-        setBengalaSent(parsed.bengalaSent || false);
-        setPendingAuditId(parsed.pendingAuditId || null);
-      } catch (_) {}
-    }
-  }, []);
-
-  // Save state to sessionStorage
+  // Save state to sessionStorage on every change
   useEffect(() => {
     sessionStorage.setItem("ghosty_state", JSON.stringify({
       query, searched, answer, isComplex, isIrrelevant, bengalaSent, pendingAuditId
