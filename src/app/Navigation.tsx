@@ -40,11 +40,9 @@ export default function Navigation() {
       
       {!isLoading && (
         <div className="flex gap-2 p-1">
-          {!isAuthenticated && (
-            <Link href="/" className={`px-6 py-2.5 rounded-t-xl text-sm font-bold transition-all flex items-center gap-2 border-b-4 ${pathname === '/' ? 'bg-primary/5 text-primary border-primary' : 'text-gray-500 border-transparent hover:bg-gray-50 hover:text-foreground'}`}>
-              <Search size={18} /> Junior
-            </Link>
-          )}
+          <Link href="/" className={`px-6 py-2.5 rounded-t-xl text-sm font-bold transition-all flex items-center gap-2 border-b-4 ${pathname === '/' ? 'bg-primary/5 text-primary border-primary' : 'text-gray-500 border-transparent hover:bg-gray-50 hover:text-foreground'}`}>
+            <Search size={18} /> Junior
+          </Link>
           {isAuthenticated && (
             <>
               <Link href="/senior" className={`px-6 py-2.5 rounded-t-xl text-sm font-bold transition-all flex items-center gap-2 border-b-4 ${pathname === '/senior' ? 'bg-primary/5 text-primary border-primary' : 'text-gray-500 border-transparent hover:bg-gray-50 hover:text-foreground'}`}>
