@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { collection, addDoc, doc, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, getDoc } from "firebase/firestore";
 
 export default function JuniorView() {
   const { uid } = useAuth();
@@ -32,6 +32,21 @@ export default function JuniorView() {
         setIsIrrelevant(parsed.isIrrelevant || false);
         setBengalaSent(parsed.bengalaSent || false);
         setPendingAuditId(parsed.pendingAuditId || null);
+
+        // Si hay bengala pendiente, verificar inmediatamente si ya fue resuelta
+        if (parsed.bengalaSent && parsed.pendingAuditId && db) {
+          getDoc(doc(db, "audits", parsed.pendingAuditId)).then(snap => {
+            if (snap.exists()) {
+              const data = snap.data();
+              if (data.status === "resolved" && data.answer) {
+                setAnswer(data.answer);
+                setIsComplex(false);
+                setBengalaSent(false);
+                setPendingAuditId(null);
+              }
+            }
+          }).catch(() => {});
+        }
       } catch (e) {
         console.error("Failed to restore state", e);
       }
@@ -45,27 +60,23 @@ export default function JuniorView() {
     }));
   }, [query, searched, answer, isComplex, isIrrelevant, bengalaSent, pendingAuditId]);
 
+  // Listener en tiempo real para esperar respuesta del Senior
   useEffect(() => {
-    let unsubscribe: () => void;
+    if (!pendingAuditId || !bengalaSent || !db) return;
     
-    if (pendingAuditId && bengalaSent) {
-      if (!db) return;
-      unsubscribe = onSnapshot(doc(db, "audits", pendingAuditId), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.status === "resolved" && data.answer) {
-            setAnswer(data.answer);
-            setIsComplex(false);
-            setBengalaSent(false);
-            setPendingAuditId(null);
-          }
+    const unsubscribe = onSnapshot(doc(db, "audits", pendingAuditId), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.status === "resolved" && data.answer) {
+          setAnswer(data.answer);
+          setIsComplex(false);
+          setBengalaSent(false);
+          setPendingAuditId(null);
         }
-      });
-    }
+      }
+    });
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    return () => unsubscribe();
   }, [pendingAuditId, bengalaSent]);
 
   const handleSearch = async (e: React.FormEvent) => {
