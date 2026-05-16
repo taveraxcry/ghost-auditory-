@@ -116,9 +116,7 @@ export default function JuniorView() {
           status: finalStatus,
           is_complex: finalIsComplex,
           created_at: new Date().toISOString(),
-          askedBy: "junior",
-        }).then(docRef => {
-          if (finalIsComplex) setPendingAuditId(docRef.id);
+          askedBy: uid || "junior",
         }).catch(() => {});
       }
       return;
@@ -162,7 +160,7 @@ export default function JuniorView() {
         status: "pending",
         is_complex: true,
         created_at: new Date().toISOString(),
-        askedBy: "junior",
+        askedBy: uid || "junior",
       });
       setPendingAuditId(docRef.id);
     } catch (e) {

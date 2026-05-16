@@ -100,7 +100,7 @@ export default function SeniorView() {
 
       unsubscribe = onSnapshot(q, (snapshot) => {
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
-        const pending = docs.filter((d: any) => d.status === "pending" && d.askedBy !== uid);
+        const pending = docs.filter((d: any) => d.status === "pending");
         setPendingDoubts(pending);
       });
     } catch (error) {
