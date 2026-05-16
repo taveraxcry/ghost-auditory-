@@ -215,21 +215,26 @@ export default function JuniorView() {
         className="w-full relative group"
       >
         <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-primary/20 rounded-[30px] blur-md opacity-50 group-hover:opacity-70 transition duration-500"></div>
-        <div className="relative bg-white/80 backdrop-blur-md rounded-[25px] flex items-center p-3 pl-8 border-2 border-primary/10 hover:border-primary/30 shadow-lg group-hover:shadow-xl transition-all duration-300">
-          <Search className="text-gray-400 group-focus-within:text-primary transition-colors" size={26} />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ej. ¿A qué edad se aplica la primera vacuna de un cachorro?"
-            className="w-full bg-transparent border-none outline-none px-6 py-4 text-xl text-foreground placeholder-gray-400/70 font-medium"
-          />
-          <button 
-            type="submit"
-            className="bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-[20px] font-bold transition-all flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95"
-          >
-            Buscar <ArrowRight size={18} className="icon-bounce" />
-          </button>
+        <div className="relative bg-white/80 backdrop-blur-md rounded-[25px] p-3 pl-8 border-2 border-primary/10 hover:border-primary/30 shadow-lg group-hover:shadow-xl transition-all duration-300">
+          <div className="flex items-start gap-2">
+            <Search className="text-gray-400 group-focus-within:text-primary transition-colors mt-4 flex-shrink-0" size={26} />
+            <textarea
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.target as HTMLTextAreaElement).form?.requestSubmit(); } }}
+              placeholder="Ej. ¿A qué edad se aplica la primera vacuna de un cachorro?"
+              rows={1}
+              style={{ minHeight: "56px", maxHeight: "200px" }}
+              onInput={(e) => { const t = e.target as HTMLTextAreaElement; t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 200) + "px"; }}
+              className="w-full bg-transparent border-none outline-none px-4 py-4 text-xl text-foreground placeholder-gray-400/70 font-medium resize-none overflow-y-auto"
+            />
+            <button 
+              type="submit"
+              className="bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-[20px] font-bold transition-all flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 flex-shrink-0 mt-1"
+            >
+              Buscar <ArrowRight size={18} className="icon-bounce" />
+            </button>
+          </div>
         </div>
       </form>
 
