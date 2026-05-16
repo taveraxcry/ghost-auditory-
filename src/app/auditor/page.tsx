@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
 import { BarChart3, AlertTriangle, Users, BookOpen, Database, Plus, Trash2, FileText, CheckCircle2, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect, useState } from "react";
@@ -88,7 +87,7 @@ export default function AuditorView() {
 
   // Knowledge Base real-time listener
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !db) return;
     const unsubscribeKb = onSnapshot(collection(db, "knowledge_base"), (snapshot) => {
       setKbEntries(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
     });
@@ -140,15 +139,15 @@ export default function AuditorView() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-3xl border-l-8 border-l-primary shadow-sm">
+        <div className="bg-white p-6 rounded-3xl border-l-8 border-l-primary shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <BookOpen size={18} />
             <span className="font-bold truncate">Consultas Totales</span>
           </div>
           <div className="text-4xl font-extrabold text-foreground">{metrics.total}</div>
-        </motion.div>
+        </div>
         
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-6 rounded-3xl border-l-8 border-l-[#388E3C] shadow-sm">
+        <div className="bg-white p-6 rounded-3xl border-l-8 border-l-[#388E3C] shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <Users size={18} />
             <span className="font-bold truncate">Resolución IA</span>
@@ -156,23 +155,23 @@ export default function AuditorView() {
           <div className="text-4xl font-extrabold text-[#388E3C]">
             {metrics.total > 0 ? Math.round((metrics.resolvedAuto / metrics.total) * 100) : 0}%
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white p-6 rounded-3xl border-l-8 border-l-[#D32F2F] shadow-sm">
+        <div className="bg-white p-6 rounded-3xl border-l-8 border-l-[#D32F2F] shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <AlertTriangle size={18} className="text-[#D32F2F]" />
             <span className="font-bold truncate">Dudas Escaladas</span>
           </div>
           <div className="text-4xl font-extrabold text-[#D32F2F]">{metrics.complex}</div>
-        </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white p-6 rounded-3xl border-l-8 border-l-gray-300 shadow-sm">
+        <div className="bg-white p-6 rounded-3xl border-l-8 border-l-gray-300 shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-gray-500">
             <AlertTriangle size={18} className="text-gray-400" />
             <span className="font-bold truncate">Nada que ver</span>
           </div>
           <div className="text-4xl font-extrabold text-gray-400">{metrics.irrelevant}</div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Big Data / Business Metrics */}
@@ -198,12 +197,7 @@ export default function AuditorView() {
       </div>
 
       {/* Knowledge Base Manager */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden"
-      >
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <button
           onClick={() => setKbOpen(!kbOpen)}
           className="w-full flex items-center justify-between p-8 hover:bg-gray-50/50 transition-colors"
@@ -223,15 +217,8 @@ export default function AuditorView() {
           </div>
         </button>
 
-        <AnimatePresence>
-          {kbOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
+        {kbOpen && (
+            <div className="overflow-hidden">
               <div className="px-8 pb-8 space-y-6">
                 {/* Add new entry form */}
                 <form onSubmit={handleAddKbEntry} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-4">
@@ -277,10 +264,8 @@ export default function AuditorView() {
                   <div className="space-y-3">
                     <h4 className="font-bold text-gray-500 text-sm uppercase tracking-wider">Entradas Activas ({kbEntries.length})</h4>
                     {kbEntries.map((entry) => (
-                      <motion.div
+                      <div
                         key={entry.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
                         className="flex items-start justify-between p-5 bg-white border border-gray-100 rounded-2xl shadow-sm group hover:border-primary/20 hover:shadow-md transition-all"
                       >
                         <div className="flex items-start gap-4 flex-1">
@@ -300,7 +285,7 @@ export default function AuditorView() {
                         >
                           <Trash2 size={18} />
                         </button>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -310,10 +295,9 @@ export default function AuditorView() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
-      </motion.div>
+      </div>
 
       {/* Main Interactions Table */}
       <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
@@ -345,11 +329,8 @@ export default function AuditorView() {
             .length > 0 ? recentAudits
             .filter(item => activeTab === "relevant" ? item.status !== "irrelevant" : item.status === "irrelevant")
             .map((item, i) => (
-            <motion.div 
+            <div 
               key={item.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + (i * 0.05) }}
               className={`p-6 rounded-2xl border flex items-center justify-between shadow-sm transition-all ${
                 item.status === 'irrelevant' ? 'bg-gray-50 border-gray-200' :
                 item.is_complex ? 'bg-[#FFFDF9] border-[#E5A93C]/30' : 'bg-white border-primary/20'
@@ -377,7 +358,7 @@ export default function AuditorView() {
                 </span>
                 <span className="text-xs text-gray-400 font-medium">{new Date(item.created_at).toLocaleString()}</span>
               </div>
-            </motion.div>
+            </div>
           )) : (
             <div className="text-center py-16 text-gray-400 font-bold bg-gray-50 rounded-2xl border border-dashed border-gray-200">
               No hay interacciones registradas aún.

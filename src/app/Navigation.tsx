@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Search, Inbox, BarChart3, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { usePathname } from "next/navigation";
+import GhostPointsBadge from "@/components/GhostPointsBadge";
 
 export default function Navigation() {
   const { isAuthenticated, isLoading, logout } = useAuth();
@@ -60,6 +61,7 @@ export default function Navigation() {
       <div className="flex items-center gap-4">
         {!isLoading && isAuthenticated ? (
           <>
+            <GhostPointsBadge />
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-foreground">Administrador</p>
               <p className="text-xs text-gray-500 font-medium">Solo Huellas</p>

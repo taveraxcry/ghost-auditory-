@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+function getGroq() {
+  try {
+    const { default: Groq } = require('groq-sdk');
+    return new Groq({ apiKey: process.env.GROQ_API_KEY });
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -155,18 +159,20 @@ BASE DE CONOCIMIENTOS (FAQ):
     - Resalta en **negrita** las palabras clave, medicamentos o instrucciones cruciales.
     - Si detectas un código rojo (urgencia vital) o un problema grave, debes iniciar el párrafo con emojis de alerta (🚨, ⚠️, 🛑).
     
-    INSTRUCCIONES DE COMPORTAMIENTO:
-    - Eres humano, empático y súper conversacional. Eres un colega más de la clínica y un gestor del conocimiento.
-    - NUNCA digas "según nuestra base de conocimientos", "según el FAQ" o frases robóticas. Responde con naturalidad.
-    - Estructura tu respuesta siempre de esta manera:
-      1. Título con ### (Ej: ### 🚨 Código Rojo: Torsión Gástrica)
-      2. Respuesta directa, con viñetas y negritas.
-      3. Al final, agrega una sección EXACTAMENTE así: "¿Qué más necesitas saber?" proponiendo 2 posibles preguntas relacionadas, cada una en una viñeta comenzando con guión (-).
-    - REGLA DE DOMINIO ESTRICTA: SOLO puedes responder preguntas relacionadas con: veterinaria, mascotas, nutrición animal, operación/logística de Solo Huellas, y temas académicos de Gestión del Conocimiento, Auditoría del Conocimiento y Talento Humano.
-    - Si te preguntan sobre cualquier otro tema fuera de este dominio (ej. política, qué es un transformer, cocina, etc.), responde EXCLUSIVAMENTE con la palabra: IRRELEVANTE.
-    - SOLO SI la pregunta es una urgencia vital extremadamente crítica donde se requiera intervenir, o si piden contraseñas, listado de sueldos o acceso al sistema interno de Solo Huellas, responde EXCLUSIVAMENTE con la palabra: COMPLEJA.
+    INSTRUCCIONES DE COMPORTAMIENTO Y LÍMITES:
+    1. DOMINIO PERMITIDO: Puedes y debes responder usando tu conocimiento general a cualquier pregunta sobre: Veterinaria, nutrición animal, mascotas, operación/logística de Solo Huellas, gestión del conocimiento, auditoría del conocimiento y talento humano. Apóyate en el FAQ pero no te limites solo a él.
+    2. FUERA DE DOMINIO: Si te preguntan sobre cualquier otro tema (política, cocina, religión, programación, etc.), DEBES responder ÚNICA y EXCLUSIVAMENTE con la palabra: IRRELEVANTE
+    3. ESCALAMIENTO AL EXPERTO: SOLO si la pregunta trata sobre una urgencia vital grave (código rojo) donde peligra la vida del animal, o si piden información confidencial de Solo Huellas (contraseñas, salarios), DEBES responder ÚNICA y EXCLUSIVAMENTE con la palabra: COMPLEJA
+    
+    ESTRUCTURA DE RESPUESTA (solo si no es IRRELEVANTE ni COMPLEJA):
+    - No uses frases introductorias como "Según la base de datos". Habla con naturalidad.
+    - Usa un título Markdown H3 (###).
+    - Responde directo, con viñetas y negritas.
+    - Al final, agrega exactamente: "¿Qué más necesitas saber?" seguido de 2 posibles preguntas en viñetas.
 `;
 
+    const groq = getGroq();
+    if (!groq) throw new Error('Groq client not available');
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
@@ -178,8 +184,9 @@ BASE DE CONOCIMIENTOS (FAQ):
     });
 
     const aiResponse = chatCompletion.choices[0]?.message?.content || "";
-    const isComplex = aiResponse.trim().toUpperCase() === "COMPLEJA";
-    const isIrrelevant = aiResponse.trim().toUpperCase() === "IRRELEVANTE";
+    const cleanResponse = aiResponse.trim().toUpperCase().replace(/[^A-Z]/g, '');
+    const isComplex = cleanResponse === "COMPLEJA";
+    const isIrrelevant = cleanResponse === "IRRELEVANTE";
 
     return NextResponse.json({
       success: true,
@@ -187,8 +194,8 @@ BASE DE CONOCIMIENTOS (FAQ):
       isComplex,
       isIrrelevant
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("API error:", error);
-    return NextResponse.json({ error: "Agent execution failed" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Agent execution failed" }, { status: 500 });
   }
 }

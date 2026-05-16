@@ -5,9 +5,11 @@ import { Search, Flame, ArrowRight, Lightbulb, TrendingUp, Syringe, Shield, Stet
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/AuthContext";
 import { collection, addDoc, getDocs, query as firestoreQuery, where, limit, doc, onSnapshot } from "firebase/firestore";
 
 export default function JuniorView() {
+  const { uid } = useAuth();
   const [query, setQuery] = useState("");
   const [searched, setSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +47,7 @@ export default function JuniorView() {
     let unsubscribe: () => void;
     
     if (isComplex && pendingAuditId) {
+      if (!db) return;
       unsubscribe = onSnapshot(doc(db, "audits", pendingAuditId), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
@@ -94,7 +97,8 @@ export default function JuniorView() {
           status: "resolved",
           is_complex: false,
           created_at: new Date().toISOString(),
-          from_cache: true
+          from_cache: true,
+          askedBy: "junior", // Forzado para permitir pruebas de desarrollador
         });
         
         setAnswer(cachedDoc.answer);
@@ -102,17 +106,28 @@ export default function JuniorView() {
         return; // Exit early!
       }
 
-      // 2. If no cache, call AI
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query })
       });
+
+      if (!res.ok) {
+        let errMsg = "La API de Groq no está respondiendo (Código " + res.status + ").";
+        try {
+          const errData = await res.json();
+          if (errData.error) errMsg = errData.error;
+        } catch(e) {}
+        setAnswer("⚠️ Error de API: " + errMsg + " Verifica tu archivo .env.local y tu conexión.");
+        setIsLoading(false);
+        return;
+      }
+
       const data = await res.json();
       
       if (data.isIrrelevant) {
         setIsIrrelevant(true);
-      } else if (data.isComplex || data.answer?.includes("COMPLEJA") || !res.ok) {
+      } else if (data.isComplex) {
         setIsComplex(true);
       } else {
         setAnswer(data.answer || "");
@@ -120,17 +135,19 @@ export default function JuniorView() {
       
       // Save to Firebase from frontend
       try {
-        const finalIsComplex = data.isComplex || data.answer?.includes("COMPLEJA") || !res.ok;
-        const finalStatus = data.isIrrelevant ? "irrelevant" : (finalIsComplex ? "pending" : "resolved");
+        const finalIsComplex = data.isComplex;
+        const finalStatus = data.isIrrelevant ? "irrelevant" : (finalIsComplex ? "draft_complex" : "resolved");
         const docRef = await addDoc(collection(db, "audits"), {
           query,
           answer: (finalIsComplex || data.isIrrelevant) ? "" : (data.answer || ""),
           status: finalStatus,
           is_complex: finalIsComplex,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          askedBy: "junior", // Forzado para permitir pruebas de desarrollador
         });
         
         if (finalIsComplex) {
+          // Guardamos el ID por si necesitamos actualizarlo luego, pero no disparamos la espera todavía
           setPendingAuditId(docRef.id);
         }
       } catch (fbError) {
@@ -138,22 +155,8 @@ export default function JuniorView() {
       }
 
     } catch (err) {
-      console.error(err);
-      setIsComplex(true);
-      
-      // Save complex fallback to Firebase
-      try {
-        const docRef = await addDoc(collection(db, "audits"), {
-          query,
-          answer: "",
-          status: "pending",
-          is_complex: true,
-          created_at: new Date().toISOString()
-        });
-        setPendingAuditId(docRef.id);
-      } catch (e) {
-        console.error(e);
-      }
+      console.error("Search error:", err);
+      setAnswer("⚠️ Error de conexión: No se pudo conectar con la IA de Ghosty. Verifica tu conexión a internet o revisa que tu GROQ_API_KEY en .env.local sea válida.");
     }
     
     setIsLoading(false);
@@ -181,12 +184,14 @@ export default function JuniorView() {
     setIsComplex(true);
     setAnswer("");
     try {
+      // Create a NEW pending document that the Senior will actually see
       const docRef = await addDoc(collection(db, "audits"), {
-        query: `${query} (Escalado Manual)`,
+        query: `${query}`,
         answer: "",
         status: "pending",
         is_complex: true,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        askedBy: "junior", // Forzado para permitir pruebas de desarrollador
       });
       setPendingAuditId(docRef.id);
       setBengalaSent(true);
@@ -226,11 +231,8 @@ export default function JuniorView() {
         </p>
       </motion.div>
 
-      <motion.form 
+      <form 
         id="junior-search-form"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.1 }}
         onSubmit={handleSearch} 
         className="w-full relative group"
       >
@@ -251,7 +253,7 @@ export default function JuniorView() {
             Buscar <ArrowRight size={18} className="icon-bounce" />
           </button>
         </div>
-      </motion.form>
+      </form>
 
       {searched && isLoading && (
         <motion.div 
@@ -349,7 +351,7 @@ export default function JuniorView() {
             <p className="text-gray-500 mb-8 max-w-lg mx-auto text-lg">
               Ghosty ha detectado que esta duda requiere intervención de un especialista de Solo Huellas.
             </p>
-            {!bengalaSent && !pendingAuditId ? (
+            {!bengalaSent ? (
               <button 
                 onClick={handleEscalate}
                 className="bg-accent hover:bg-yellow-600 text-white px-10 py-5 rounded-[20px] font-extrabold text-xl transition-all hover-lift flex items-center gap-3 mx-auto shadow-xl"
@@ -367,7 +369,7 @@ export default function JuniorView() {
               </div>
             )}
             
-            {(bengalaSent || pendingAuditId) && (
+            {bengalaSent && (
                <button 
                   onClick={handleReset}
                   className="mt-8 text-sm bg-white hover:bg-gray-50 border border-gray-200 text-foreground px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-sm hover:shadow-md hover-lift mx-auto"
