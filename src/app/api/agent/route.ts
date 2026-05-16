@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       ],
       model: 'llama-3.1-8b-instant',
       temperature: 0,
-      max_tokens: 350,
+      max_tokens: 800,
     });
 
     const aiResponse = chatCompletion.choices[0]?.message?.content || "";
