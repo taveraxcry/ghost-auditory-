@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { collection, addDoc, getDocs, query as firestoreQuery, where, limit, doc, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot } from "firebase/firestore";
 
 export default function JuniorView() {
   const { uid } = useAuth();
@@ -78,37 +78,7 @@ export default function JuniorView() {
     setBengalaSent(false);
 
     try {
-      // 1. Check Cache in Firebase (wrapped so index errors don't break the flow)
-      try {
-        const cacheQ = firestoreQuery(
-          collection(db, "audits"),
-          where("query", "==", query.trim()),
-          where("status", "==", "resolved"),
-          limit(1)
-        );
-        const cacheSnapshot = await getDocs(cacheQ);
-        if (!cacheSnapshot.empty) {
-          const cachedDoc = cacheSnapshot.docs[0].data();
-          try {
-            await addDoc(collection(db, "audits"), {
-              query,
-              answer: cachedDoc.answer,
-              status: "resolved",
-              is_complex: false,
-              created_at: new Date().toISOString(),
-              from_cache: true,
-              askedBy: "junior",
-            });
-          } catch (_) {}
-          setAnswer(cachedDoc.answer);
-          setIsLoading(false);
-          return;
-        }
-      } catch (cacheErr) {
-        console.warn("Cache lookup skipped (index may be missing):", cacheErr);
-        // Continue to AI call normally
-      }
-
+      // DIRECTO a la IA — sin pasos intermedios
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -116,12 +86,9 @@ export default function JuniorView() {
       });
 
       if (!res.ok) {
-        let errMsg = "La API de Groq no está respondiendo (Código " + res.status + ").";
-        try {
-          const errData = await res.json();
-          if (errData.error) errMsg = errData.error;
-        } catch(e) {}
-        setAnswer("⚠️ Error de API: " + errMsg + " Verifica tu archivo .env.local y tu conexión.");
+        let errMsg = "Error " + res.status;
+        try { const e = await res.json(); if (e.error) errMsg = e.error; } catch(_){}
+        setAnswer("⚠️ " + errMsg);
         setIsLoading(false);
         return;
       }
@@ -135,31 +102,30 @@ export default function JuniorView() {
       } else {
         setAnswer(data.answer || "");
       }
-      
-      // Save to Firebase from frontend
-      try {
+
+      // MOSTRAR RESPUESTA PRIMERO, guardar en Firebase DESPUÉS (fire-and-forget)
+      setIsLoading(false);
+
+      // Guardar en background — no bloquea la UI
+      if (db) {
         const finalIsComplex = data.isComplex;
         const finalStatus = data.isIrrelevant ? "irrelevant" : (finalIsComplex ? "draft_complex" : "resolved");
-        const docRef = await addDoc(collection(db, "audits"), {
+        addDoc(collection(db, "audits"), {
           query,
           answer: (finalIsComplex || data.isIrrelevant) ? "" : (data.answer || ""),
           status: finalStatus,
           is_complex: finalIsComplex,
           created_at: new Date().toISOString(),
-          askedBy: "junior", // Forzado para permitir pruebas de desarrollador
-        });
-        
-        if (finalIsComplex) {
-          // Guardamos el ID por si necesitamos actualizarlo luego, pero no disparamos la espera todavía
-          setPendingAuditId(docRef.id);
-        }
-      } catch (fbError) {
-        console.error("Failed to save audit to Firebase:", fbError);
+          askedBy: "junior",
+        }).then(docRef => {
+          if (finalIsComplex) setPendingAuditId(docRef.id);
+        }).catch(() => {});
       }
+      return;
 
     } catch (err) {
       console.error("Search error:", err);
-      setAnswer("⚠️ Error de conexión: No se pudo conectar con la IA de Ghosty. Verifica tu conexión a internet o revisa que tu GROQ_API_KEY en .env.local sea válida.");
+      setAnswer("⚠️ Error de conexión. Intenta de nuevo.");
     }
     
     setIsLoading(false);
