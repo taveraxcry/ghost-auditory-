@@ -78,32 +78,35 @@ export default function JuniorView() {
     setBengalaSent(false);
 
     try {
-      // 1. Check Cache in Firebase first
-      const cacheQ = firestoreQuery(
-        collection(db, "audits"),
-        where("query", "==", query.trim()),
-        where("status", "==", "resolved"),
-        limit(1)
-      );
-      
-      const cacheSnapshot = await getDocs(cacheQ);
-      if (!cacheSnapshot.empty) {
-        const cachedDoc = cacheSnapshot.docs[0].data();
-        
-        // Save a new record for telemetry (we want to count this interaction too)
-        await addDoc(collection(db, "audits"), {
-          query,
-          answer: cachedDoc.answer,
-          status: "resolved",
-          is_complex: false,
-          created_at: new Date().toISOString(),
-          from_cache: true,
-          askedBy: "junior", // Forzado para permitir pruebas de desarrollador
-        });
-        
-        setAnswer(cachedDoc.answer);
-        setIsLoading(false);
-        return; // Exit early!
+      // 1. Check Cache in Firebase (wrapped so index errors don't break the flow)
+      try {
+        const cacheQ = firestoreQuery(
+          collection(db, "audits"),
+          where("query", "==", query.trim()),
+          where("status", "==", "resolved"),
+          limit(1)
+        );
+        const cacheSnapshot = await getDocs(cacheQ);
+        if (!cacheSnapshot.empty) {
+          const cachedDoc = cacheSnapshot.docs[0].data();
+          try {
+            await addDoc(collection(db, "audits"), {
+              query,
+              answer: cachedDoc.answer,
+              status: "resolved",
+              is_complex: false,
+              created_at: new Date().toISOString(),
+              from_cache: true,
+              askedBy: "junior",
+            });
+          } catch (_) {}
+          setAnswer(cachedDoc.answer);
+          setIsLoading(false);
+          return;
+        }
+      } catch (cacheErr) {
+        console.warn("Cache lookup skipped (index may be missing):", cacheErr);
+        // Continue to AI call normally
       }
 
       const res = await fetch("/api/agent", {
