@@ -46,7 +46,7 @@ export default function JuniorView() {
   useEffect(() => {
     let unsubscribe: () => void;
     
-    if (isComplex && pendingAuditId) {
+    if (pendingAuditId && bengalaSent) {
       if (!db) return;
       unsubscribe = onSnapshot(doc(db, "audits", pendingAuditId), (docSnap) => {
         if (docSnap.exists()) {
@@ -64,7 +64,7 @@ export default function JuniorView() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [isComplex, pendingAuditId]);
+  }, [pendingAuditId, bengalaSent]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,36 +319,43 @@ export default function JuniorView() {
             <div className="w-20 h-20 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto mb-6 border border-accent/20">
               <Search size={40} />
             </div>
-            <h3 className="text-3xl font-bold mb-4 text-foreground">Conocimiento Privado / Complejo</h3>
-            <p className="text-gray-500 mb-8 max-w-lg mx-auto text-lg">
-              Ghosty ha detectado que esta duda requiere intervención de un especialista de Solo Huellas.
-            </p>
             {!bengalaSent ? (
-              <button 
-                onClick={handleEscalate}
-                className="bg-accent hover:bg-yellow-600 text-white px-10 py-5 rounded-[20px] font-extrabold text-xl transition-all hover-lift flex items-center gap-3 mx-auto shadow-xl"
-              >
-                <Flame size={24} />
-                🚀 LANZAR BENGALA DE AUXILIO
-              </button>
+              <>
+                <h3 className="text-3xl font-bold mb-4 text-foreground">Conocimiento Privado / Complejo</h3>
+                <p className="text-gray-500 mb-8 max-w-lg mx-auto text-lg">
+                  Ghosty ha detectado que esta duda requiere intervención de un especialista de Solo Huellas.
+                </p>
+                <button 
+                  onClick={handleEscalate}
+                  className="bg-accent hover:bg-yellow-600 text-white px-10 py-5 rounded-[20px] font-extrabold text-xl transition-all hover-lift flex items-center gap-3 mx-auto shadow-xl"
+                >
+                  <Flame size={24} />
+                  🚀 LANZAR BENGALA DE AUXILIO
+                </button>
+              </>
             ) : (
               <div className="flex flex-col items-center">
-                <div className="bg-yellow-50 text-accent border-2 border-accent px-10 py-5 rounded-[20px] font-bold text-xl flex items-center gap-4 mx-auto max-w-md justify-center mb-4">
-                  <div className="animate-spin w-6 h-6 border-4 border-accent border-t-transparent rounded-full"></div>
-                  Esperando respuesta...
+                <div className="bg-green-50 text-green-700 border-2 border-green-300 px-8 py-4 rounded-2xl font-bold text-lg flex items-center gap-3 mx-auto mb-4">
+                  ✅ Pregunta enviada al equipo Senior
                 </div>
-                <p className="text-gray-500 font-medium">El equipo senior ha sido notificado. No cierres esta ventana.</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 max-w-lg w-full">
+                  <p className="text-xs text-gray-400 font-bold uppercase mb-1">Tu pregunta:</p>
+                  <p className="text-foreground font-medium">&quot;{query}&quot;</p>
+                </div>
+                <div className="flex items-center gap-3 text-accent font-bold text-lg mb-2">
+                  <div className="animate-spin w-5 h-5 border-3 border-accent border-t-transparent rounded-full"></div>
+                  Esperando respuesta del experto...
+                </div>
+                <p className="text-gray-400 font-medium text-sm">No cierres esta ventana. La respuesta aparecerá aquí automáticamente.</p>
               </div>
             )}
             
-            {bengalaSent && (
-               <button 
-                  onClick={handleReset}
-                  className="mt-8 text-sm bg-white hover:bg-gray-50 border border-gray-200 text-foreground px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-sm hover:shadow-md hover-lift mx-auto"
-               >
-                  Dejar de esperar y volver
-               </button>
-            )}
+            <button 
+              onClick={handleReset}
+              className="mt-8 text-sm bg-white hover:bg-gray-50 border border-gray-200 text-foreground px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-sm hover:shadow-md hover-lift mx-auto"
+            >
+              {bengalaSent ? "Dejar de esperar y volver" : "Volver al buscador"}
+            </button>
           </div>
         </motion.div>
       )}
