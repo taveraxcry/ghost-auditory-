@@ -260,7 +260,7 @@ export default function JuniorView() {
                 <Lightbulb size={16} className="text-accent" /> ¿Qué más necesitas saber?
               </h4>
               <div className="flex flex-col gap-2">
-                {parsedAnswer.suggestions.map((sug, idx) => (
+                {parsedAnswer.suggestions.map((sug: string, idx: number) => (
                   <button 
                     key={idx} 
                     onClick={() => triggerSearch(sug)}
