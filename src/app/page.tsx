@@ -174,8 +174,8 @@ export default function JuniorView() {
     const parts = answer.split("¿Qué más necesitas saber?");
     if (parts.length > 1) {
       const mainText = parts[0].trim();
-      const rawSuggestions = parts[1].split("\n").filter(line => line.trim().startsWith("-"));
-      const suggestions = rawSuggestions.map(line => line.replace(/^-\s*/, "").trim());
+      const rawSuggestions = parts[1].split("\n").filter((line: string) => line.trim().startsWith("-"));
+      const suggestions = rawSuggestions.map((line: string) => line.replace(/^-\s*/, "").trim());
       return { mainText, suggestions };
     }
     return { mainText: answer, suggestions: [] };
